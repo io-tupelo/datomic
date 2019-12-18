@@ -1,4 +1,4 @@
-(ns tupelo-datomic.schema
+(ns tupelo.datomic.schema
   (:use tupelo.core)
   (:require
     [schema.core      :as s]

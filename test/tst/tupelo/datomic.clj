@@ -1,9 +1,9 @@
-(ns tst.tupelo-datomic.core
+(ns tst.tupelo.datomic
   (:use tupelo.core tupelo.test)
   (:require
     [datomic.api :as d]
     [schema.core :as s]
-    [tupelo-datomic.core :as td]
+    [tupelo.datomic :as td]
     [tupelo.schema :as ts]
   ))
 

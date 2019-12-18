@@ -1,4 +1,4 @@
-(ns tupelo-datomic.core
+(ns tupelo.datomic
   (:use tupelo.core)
   (:refer-clojure :exclude [update partition])
   (:require
