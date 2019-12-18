@@ -516,6 +516,14 @@ Tupelo-Datomic API docs] for details).
   "Returns the EID of a transaction"
 ----
 
+== Installation
+
+- Download Datomic Free from:  https://my.datomic.com/downloads/free
+- Unpack the zip file, and view the README
+- chmod a+x bin/maven-install
+- bin/maven-install
+- add the coordinates to your lein project, like:   [com.datomic/datomic-free "0.9.5703.21"]
+
 == Future Work
 
 Lots more to come!
