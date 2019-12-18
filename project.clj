@@ -9,9 +9,7 @@
                  [prismatic/schema "1.1.12"]
                  [tupelo "0.9.182"]
                  ]
-  :resource-paths ["resources/"
-                   "resources/datomic-free-0.9.5661-everything.jar"
-                  ]
+  :resource-paths ["resources/" ]
   :profiles { :dev {:dependencies []
                    :plugins [] }
              :uberjar {:aot :all}}
@@ -34,9 +32,6 @@
 
   :target-path "target/%s"
   :clean-targets [ "target" ]
-
-  :jar-exclusions [ #"resources/datomic-free-0.9.5661-everything.jar" ]
-  :uberjar-exclusions [ #"resources/datomic-free-0.9.5661-everything.jar" ]
 
   ; "lein test"         will not  run tests marked with the ":slow" metadata
   ; "lein test :slow"   will only run tests marked with the ":slow" metadata
