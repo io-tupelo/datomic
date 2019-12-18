@@ -46,7 +46,7 @@
 ; demo to show changing an attribute (string -> integer, cardinality/one -> many, deleting an attribute
 ; example of retracting 1 item from a normal (cardinality/one) attribute & a cardinality/many attribute
 
-(deftest t-james-bond
+(dotest
   ; Create some new attributes. Required args are the attribute name (an optionally namespaced
   ; keyword) and the attribute type (full listing at http://docs.datomic.com/schema.html). We wrap
   ; the new attribute definitions in a transaction and immediately commit them into the DB.
