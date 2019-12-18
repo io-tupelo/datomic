@@ -1,17 +1,10 @@
-(defproject io.tupelo/datomic "0.9.4"
+(defproject io.tupelo/datomic "19.12.01"
   :description "Tupelo Datomic:  Datomic With A Spoonful of Honey"
   :url "https://github.com/io-tupelo/datomic"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [
-                 [cheshire "5.9.0"]
-                 [danlentz/clj-uuid "0.1.9"]
-                 [enlive "1.1.6"]
                  [org.clojure/clojure "1.10.1"]
-                 [org.clojure/data.xml "0.2.0-alpha5"]
-                 [org.clojure/spec.alpha "0.2.176"]
-                 [org.clojure/test.check "0.10.0"]
-                 ;[org.clojure/tools.logging "0.4.0"]
                  [prismatic/schema "1.1.12"]
                  [tupelo "0.9.182"]
                  ]

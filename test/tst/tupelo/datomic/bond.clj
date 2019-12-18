@@ -1,19 +1,19 @@
-(ns tst.tupelo-datomic.bond
+(ns tst.tupelo.datomic.bond
   (:use tupelo.core tupelo.test)
   (:require
-    [clojure.pprint       :as pp]
-    [datomic.api          :as d]
-    [schema.core          :as s]
-    [tupelo-datomic.core  :as td]
-    [tupelo.schema        :as ts]
-  ))
+    [clojure.test :as clj-tst]
+    [datomic.api :as d]
+    [schema.core :as s]
+    [tupelo.datomic :as td]
+    [tupelo.schema :as ts]
+    ))
 
 (def datomic-uri "datomic:mem://tst.bond") ; the URI for our test db
 (def ^:dynamic *conn*) ; dynamic var to hold the db connection
 
 ;---------------------------------------------------------------------------------------------------
 ; clojure.test fixture: setup & teardown for each test
-(use-fixtures :each
+(clj-tst/use-fixtures  :each
   (fn setup-execute-teardown ; perform setup, execution, & teardown for each test
     [tst-fn]
     ; setup ----------------------------------------------------------

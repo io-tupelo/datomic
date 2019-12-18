@@ -1,10 +1,10 @@
-(ns tst.tupelo-datomic.quick-start
+(ns tst.tupelo.datomic.quick-start
   (:use tupelo.core tupelo.test)
   (:require
    ;[clojure.tools.logging :as log]
    ;[datomic.client.api :as d]
-    [datomic.api        :as d]
-    [tupelo-datomic.core  :as td]
+    [datomic.api :as d]
+    [tupelo.datomic :as td]
   ))
 
 (def use-datomic-cloud false)

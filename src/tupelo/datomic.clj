@@ -4,7 +4,7 @@
   (:require
     [datomic.api :as d]
     [schema.core :as s]
-    [tupelo-datomic.schema :as tsd] ; #todo tsd -> tds
+    [tupelo.datomic.schema :as tsd] ; #todo tsd -> tds
     [tupelo.schema :as ts]
   ))
 
@@ -427,7 +427,7 @@
 
   It is an error if the :find clause does not contain a Datomic Pull API request.  "
   [& args]
-  (when-not (tupelo-datomic.core/contains-pull? args)
+  (when-not (contains-pull? args)
     (throw (IllegalArgumentException. 
              (str "query-pull: Only intended for queries using the Datomic Pull API"))))
   `(forv [tuple# (find-base ~@args) ]
@@ -443,7 +443,7 @@
 
   It is an error if the :find clause does not contain a Datomic Pull API request.  "
   [& args]
-  (when-not (tupelo-datomic.core/contains-pull? args)
+  (when-not (contains-pull? args)
     (throw (IllegalArgumentException. 
              (str "query-pull: Only intended for queries using the Datomic Pull API"))))
   `(forv [tuple# (query-base ~@args) ]
@@ -454,15 +454,15 @@
 (defn t-query
   "Test the query macro, returns true on success."
   []
-  (let [expanded-result
-          (macroexpand-1 '(tupelo-datomic.core/query-base   :let    [a  (src 1)
-                                                                     b  val-2 ]
-                                                            :find   [?e]
-                                                            :where  [ [?e :person/name ?name] ] )) ]
-    (= expanded-result   '(datomic.api/q (quote { :find [?e]
-                                                  :in [a b]
-                                                  :where [[?e :person/name ?name]] } )
-                                         (src 1) val-2))))
+  (let [expanded-result (macroexpand-1 '(tupelo.datomic/query-base :let [a (src 1)
+                                                                         b val-2]
+                                          :find [?e]
+                                          :where [[?e :person/name ?name]]))]
+    (= expanded-result
+      '(datomic.api/q (quote {:find  [?e]
+                              :in    [a b]
+                              :where [[?e :person/name ?name]]})
+         (src 1) val-2))))
 
 ;------------------------------------------------------------------------------------------------------------------
 ;---------------------------------------------------------------------------------------------------

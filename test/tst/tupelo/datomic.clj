@@ -1,6 +1,7 @@
 (ns tst.tupelo.datomic
-  (:use tupelo.core tupelo.test)
+  (:use tupelo.core tupelo.test )
   (:require
+    [clojure.test :as clj-tst]
     [datomic.api :as d]
     [schema.core :as s]
     [tupelo.datomic :as td]
@@ -12,7 +13,7 @@
 
 ;---------------------------------------------------------------------------------------------------
 ; clojure.test fixture: setup & teardown for each test
-(use-fixtures :each
+(clj-tst/use-fixtures :each
   (fn setup-execute-teardown            ; perform setup, execution, & teardown for each test
     [tst-fn]
 ; setup ----------------------------------------------------------
@@ -27,7 +28,7 @@
 
 ;---------------------------------------------------------------------------------------------------
 
-(deftest t-new-partition
+(dotest
   (is (wild-match? {:db/id                 :*
                     :db.install/_partition :db.part/db
                     :db/ident              :people}
@@ -172,35 +173,35 @@
     (is (wild-match? [:idx :*] part2))
     (is (s/validate ts/Eid (second part2)))))
 
-(deftest t-new-enum
+(dotest
   (is (submatch? {:db/ident :weapon.type/gun} (td/new-enum :weapon.type/gun)))
   (is (submatch? {:db/ident :gun} (td/new-enum :gun)))
   (is (thrown? Exception (td/new-enum "gun"))))
 
 ; #todo: need more tests for query-*, etc
 
-(deftest t-update
+(dotest
   (is= {:db/id 999 :person/name "joe" :car :car.type/bmw}
         (td/update 999 {:person/name "joe" :car :car.type/bmw}))
   (is= {:db/id [:person/name "joe"] :car :car.type/bmw}
         (td/update [:person/name "joe"] {:car :car.type/bmw})))
 
-(deftest t-retract-value
+(dotest
   (is= [:db/retract 999 :car :car.type/bmw]
         (td/retract-value 999 :car :car.type/bmw))
   (is= [:db/retract [:person/name "joe"] :car :car.type/bmw]
         (td/retract-value [:person/name "joe"] :car :car.type/bmw)))
 
-(deftest t-retract-entity
+(dotest
   (is= [:db.fn/retractEntity 999] (td/retract-entity 999))
   (is= [:db.fn/retractEntity [:person/name "joe"]]
         (td/retract-entity [:person/name "joe"])))
 
 ; The macro test must be in the same source file as the macro definition or it won't expand properly
-(deftest t-macro
+(dotest
   (is (td/t-query)))
 
-(deftest t-contains-pull?
+(dotest
   (let [proxy-contains-pull? #'td/contains-pull? ] ; trick to get around private var
     (is       (proxy-contains-pull? [:find '[xx (pull [*]) ?y ]] ))
     (is (not  (proxy-contains-pull? [:find '[xx            ?y ]] )))))

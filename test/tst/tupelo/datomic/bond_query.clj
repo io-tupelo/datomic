@@ -1,9 +1,10 @@
-(ns tst.tupelo-datomic.bond-query
+(ns tst.tupelo.datomic.bond-query
   (:use tupelo.core tupelo.test)
   (:require
+    [clojure.test :as clj-tst]
     [datomic.api :as d]
     [schema.core :as s]
-    [tupelo-datomic.core :as td]
+    [tupelo.datomic :as td]
     [tupelo.schema :as ts]
   ))
 
@@ -14,7 +15,7 @@
 
 ;---------------------------------------------------------------------------------------------------
 ; clojure.test fixture: setup & teardown for each test
-(use-fixtures :each
+(clj-tst/use-fixtures :each
   (fn setup-execute-teardown            ; perform setup, execution, & teardown for each test
     [tst-fn]
 ; setup ----------------------------------------------------------
