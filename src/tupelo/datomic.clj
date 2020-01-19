@@ -257,7 +257,7 @@
 
 ;---------------------------------------------------------------------------------------------------
 (s/defn ^:no-doc where-clause :- ts/TupleList
-  "Process the ":where" clause in the find-base macro"
+  "Process the `:where` clause in the find-base macro"
   [maps :- ts/MapList]
   (apply glue
     (forv [curr-map maps]
@@ -273,21 +273,20 @@
   ; returns a HashSet of datomic entity objects
   "Base macro for improved API syntax for datomic.api/q query function (Entity API)"
   [& args]
-  (newline) (println "find-base =>" args)
+  ; (newline) (println "find-base =>" args)
   (when-not (= :where (nth args 4))
     (throw (IllegalArgumentException. 
       (str "find-base: 5th arg must be :where, received=" args))))
   (let
-    [
-     let-find-map  (apply hash-map (take 4 args))              _ (spyx let-find-map)
-     where-entries (where-clause (drop 5 args))                _ (spyx where-entries)
-     args-map      (glue let-find-map {:where where-entries})  _ (spyx args-map)
-     let-vec       (grab :let args-map)                        _ (spyx let-vec)
-     let-map       (apply hash-map let-vec)                    _ (spyx let-map)
-     let-syms      (keys let-map)                              _ (spyx let-syms)
-     let-srcs      (vals let-map)                              _ (spyx let-srcs)
-     yield-vec    (grab :yield args-map)                     _ (spyx yield-vec)
-     where-vec     (grab :where args-map)                      _ (spyx where-vec)
+    [let-find-map  (apply hash-map (take 4 args))                           ;_ (spyx let-find-map)
+     where-entries (where-clause (drop 5 args))                             ;_ (spyx where-entries)
+     args-map      (glue let-find-map {:where where-entries})               ;_ (spyx args-map)
+     let-vec       (grab :let args-map)                                     ;_ (spyx let-vec)
+     let-map       (apply hash-map let-vec)                                 ;_ (spyx let-map)
+     let-syms      (keys let-map)                                           ;_ (spyx let-syms)
+     let-srcs      (vals let-map)                                           ;_ (spyx let-srcs)
+     yield-vec    (grab :yield args-map)                                    ;_ (spyx yield-vec)
+     where-vec     (grab :where args-map)                                   ;_ (spyx where-vec)
      ]
     (flush)
     (when-not (vector? let-vec)
