@@ -322,94 +322,6 @@
   `(set (for [tuple# (find-base ~@args) ]
           (vec tuple#))))
 
-;---------------------------------------------------------------------------------------------------
-; Query
-
-; #todo need checks to stop collection result (:find [?e ...])
-; #todo and scalar result (:find [?e .])
-(defmacro ^:no-doc query-base ; #todo remember 'with'
-  ; returns a HashSet of datomic entity objects
-  "Base macro for improved API syntax for datomic.api/q query function (Entity API)"
-  [& args]
-  (let [args-map    (apply hash-map args)
-        let-vec     (grab :let args-map)
-        let-map     (apply hash-map let-vec)
-        let-syms    (keys let-map)
-        let-srcs    (vals let-map)
-        find-vec    (grab :find args-map)
-        where-vec   (grab :where args-map)
-  ]
-    (when-not (vector? let-vec)
-      (throw (IllegalArgumentException. (str "query-base: value for :let must be a vector; received=" let-vec))))
-    (when-not (vector? find-vec)
-      (throw (IllegalArgumentException. (str "query-base: value for :find must be a vector; received=" find-vec))))
-    (when-not (vector? where-vec)
-      (throw (IllegalArgumentException. (str "query-base: value for :where must be a vector; received=" where-vec))))
-   `(d/q  '{:find   ~find-vec
-            :where  ~where-vec
-            :in     [ ~@let-syms ] }
-        ~@let-srcs)))
-
-; #todo: delete old stuff (or move to .deprecated ns)
-
-; #todo: rename :find -> :select or :return or :result ???
-(defmacro ^:deprecated query
-  "Returns query results as a set of tuples (i.e. a TupleSet, or #{ [s/Any] } in Prismatic Schema),
-   where each tuple is unique. Usage:
-
-    (td/query   :let    [$        (d/db *conn*)     ; assign multiple variables just like
-                         ?name    \"Caribbean\"]    ;   in Clojure 'let' special form
-                :find   [?e ?name]
-                :where  [ [?e :person/name ?name]
-                          [?e :location ?loc] ] )
-
-  Unlike datomic.api/q, the query form does not need to be wrapped in a map literal nor is any
-  quoting required. Most importantly, the :in keyword has been replaced with the :let keyword, and
-  the syntax has been copied from the Clojure let special form so that both the query variables (the
-  variables $ and ?name in this case) are more closely aligned with their actual values. Also, the
-  implicit DB $ must be explicitly tied to its data source in all cases (as shown above)."
-  [& args]
-  `(set (for [tuple# (query-base ~@args) ]
-          (vec tuple#))))
-
-(defmacro ^:deprecated query-attr
- "Returns a set of unique attribute values (i.e. #{s/Any}). Any duplicate values will be
-  discarded. Usage:
-
-    (td/query-attr :let    [$        (d/db *conn*)       ; assign multiple variables just like
-                           ?name    \"James Bond\"]      ;   in Clojure 'let' special form
-                   :find   [?e]
-                   :where  [ [?e :person/name ?name] ] )
-
-  It is an error if more than one attribute is returned."
-  [& args]
-  `(set (map only (query-base ~@args))))  ; return 1 attribute value from each entity
-
-; #todo allow ":find [:*]" to return entire entity map like "select * from" in sql
-(defmacro ^:deprecated query-entity
- "Returns a result tuple for a single entity (i.e. [s/Any]). Usage:
-
-    (td/query-entity :let    [$ (d/db *conn*)]
-                     :find   [?eid ?name]  ; <- output tuple shape
-                     :where  [ [?eid :person/name ?name      ]
-                               [?eid :location    \"Caribbean\"] ] )
-
-  It is an error if more than one matching entity is found."
-  [& args]
-  `(vec (only (query-base ~@args)))) ; return exactly 1 entity
-
-(defmacro ^:deprecated query-value
- "Returns the value of a single attribute for a single entity.  Usage:
-
-    (td/query-value :let    [$      (d/db *conn*)
-                             ?name  \"James Bond\"]
-                    :find   [?eid]  ; <- output tuple shape
-                    :where  [ [?eid :person/name ?name] ] )
-
-   It is an error if more than one matching value is found."
-  [& args]
-  `(only (query-entity ~@args))) ; retrieve 1 value from 1 entity
-
 (defn- ^:no-doc contains-pull?  ; prevent codox ("lein doc") from processing
  "Returns true if a sequence of symbols includes 'pull'"
   [args-vec]
@@ -433,36 +345,20 @@
   `(forv [tuple# (find-base ~@args) ]
       (vec tuple#)))
 
-(defmacro ^:deprecated query-pull
- "Returns a TupleList [Tuple] of query results, where items may be duplicated. Intended only for
-  use with the Datomic Pull API. Usage:
-
-    (td/query-pull  :let    [$ (d/db *conn*) ]
-                    :find   [ (pull ?eid [:location]) ]
-                    :where  [ [?eid :location] ] )
-
-  It is an error if the :find clause does not contain a Datomic Pull API request.  "
-  [& args]
-  (when-not (contains-pull? args)
-    (throw (IllegalArgumentException. 
-             (str "query-pull: Only intended for queries using the Datomic Pull API"))))
-  `(forv [tuple# (query-base ~@args) ]
-      (vec tuple#)))
-
 ; #todo: convert to t-find
 ; #todo: write blog post/forum letter about this testing technique
-(defn t-query
-  "Test the query macro, returns true on success."
-  []
-  (let [expanded-result (macroexpand-1 '(tupelo.datomic/query-base :let [a (src 1)
-                                                                         b val-2]
-                                          :find [?e]
-                                          :where [[?e :person/name ?name]]))]
-    (= expanded-result
-      '(datomic.api/q (quote {:find  [?e]
-                              :in    [a b]
-                              :where [[?e :person/name ?name]]})
-         (src 1) val-2))))
+;(defn t-query
+;  "Test the query macro, returns true on success."
+;  []
+;  (let [expanded-result (macroexpand-1 '(tupelo.datomic/-base :let [a (src 1)
+;                                                                         b val-2]
+;                                          :find [?e]
+;                                          :where [[?e :person/name ?name]]))]
+;    (= expanded-result
+;      '(datomic.api/q (quote {:find  [?e]
+;                              :in    [a b]
+;                              :where [[?e :person/name ?name]]})
+;         (src 1) val-2))))
 
 ;------------------------------------------------------------------------------------------------------------------
 ;---------------------------------------------------------------------------------------------------

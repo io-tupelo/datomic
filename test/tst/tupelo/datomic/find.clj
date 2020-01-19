@@ -15,9 +15,10 @@
 (s/defn get-people :- ts/Set
   "Returns a set of entity maps for all entities with the :person/name attribute"
   []
-  (let [eids (td/query-attr :let [$ (d/db *conn*)]
-               :find [?eid] ; <- could also use Datomic Pull API
-               :where [[?eid :person/name]])]
+  (let [eids (onlies (td/find
+                       :let [$ (d/db *conn*)]
+                       :find [?eid] ; <- could also use Datomic Pull API
+                       :where  {:db/id ?eid :person/name ?tmp}))]
     (set (for [eid eids]
            (td/entity-map (d/db *conn*) eid)))))
 
@@ -65,10 +66,10 @@
 
 (defn verify-james-data []
   ; Verify current status. Notice there are no duplicate weapons.
-  (is (= (get-people)
-         #{ {:person/name "James Bond" :location "London"    :weapon/type #{              :weapon/wit :weapon/knife :weapon/gun} :person/secret-id 7 }
-            {:person/name "M"          :location "London"    :weapon/type #{:weapon/guile                           :weapon/gun}}
-            {:person/name "Dr No"      :location "Caribbean" :weapon/type #{:weapon/guile             :weapon/knife :weapon/gun}}} )))
+  (is= (get-people)
+    #{{:person/name "James Bond" :location "London" :weapon/type #{:weapon/wit :weapon/knife :weapon/gun} :person/secret-id 7}
+      {:person/name "M" :location "London" :weapon/type #{:weapon/guile :weapon/gun}}
+      {:person/name "Dr No" :location "Caribbean" :weapon/type #{:weapon/guile :weapon/knife :weapon/gun}}}))
 
 ;---------------------------------------------------------------------------------------------------
 ; clojure.test fixture: setup & teardown for each test
@@ -93,20 +94,18 @@
 ;  (is (td/t-query)))
 
 (dotest
-  (let [james-eid  (td/query-value  :let    [$ (d/db *conn*)]
-                                    :find   [?eid]
-                                    :where  [[?eid :person/name "James Bond"]]) ]
-    (let [eids  (td/find  :let    [$ (d/db *conn*)]
-                          :find   [?eid]
-                          :where  {:db/id ?eid :person/name "James Bond"  :weapon/type :weapon/wit}
-                          {:db/id ?eid :location "London"} )
-          ]
-      (is (= james-eid (only (only eids)))))
-    (let [eids  (td/find  :let    [$ (d/db *conn*)]
-                          :find   [?eid]
-                          :where  {:db/id ?eid :person/name "James Bond"  :weapon/type :weapon/wit}
-                                  {:db/id ?eid :location "Caribbean"} )
-          ]
+  (let [james-eid (only2 (td/find
+                           :let [$ (d/db *conn*)]
+                           :find [?eid]
+                           :where {:db/id ?eid :person/name "James Bond"}))]
+    (let [eids (td/find :let [$ (d/db *conn*)]
+                 :find [?eid]
+                 :where {:db/id ?eid :person/name "James Bond" :weapon/type :weapon/wit}
+                 {:db/id ?eid :location "London"})]
+      (is (= james-eid (only2 eids))))
+    (let [eids (td/find :let [$ (d/db *conn*)]
+                 :find [?eid]
+                 :where {:db/id ?eid :person/name "James Bond" :weapon/type :weapon/wit}
+                 {:db/id ?eid :location "Caribbean"})]
       (is (= #{} eids)))
-  )
-)
+    ))
