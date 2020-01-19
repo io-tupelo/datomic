@@ -177,8 +177,8 @@
     (s/validate  ts/TupleSet  tuple-set)       ; verify expected type using Prismatic Schema
     (s/validate #{ [s/Any] }  tuple-set)       ; literal definition of TupleSet
     (is= tuple-set #{ ["Dr No"       "Caribbean"]      ; Even though London is repeated, each tuple is
-                        ["James Bond"  "London"]         ; still unique. Otherwise, any duplicate tuples
-                        ["M"           "London"] } ))   ; will be discarded since output is a clojure set.
+                      ["James Bond"  "London"]         ; still unique. Otherwise, any duplicate tuples
+                      ["M"           "London"] } ))   ; will be discarded since output is a clojure set.
 
   ; If you want just a single attribute as output, you can get a set of attributes (rather than a set of
   ; tuples) use (onlies ...).  As usual, any duplicate values will be discarded. It is an error if
@@ -209,6 +209,7 @@
     (is (re-find #"Exception" busy)))  ; Exception thrown/caught since 2 people in London
 
   ; If you know there is (or should be) only a single scalar answer, use (only2 ...)
+  ;   It translates into `(only (only ...))`, like "only-squared".
   (let [beachy    (only2 (td/find :let [$ (live-db) ; assign multiple find variables
                                         ?loc "Caribbean"] ; just like clojure 'let' special form
                            :find [?name]
@@ -238,7 +239,7 @@
   ; Pull API to return a list of results (instead of a set).
   (let [result-pull     (td/find-pull   :let    [$ (live-db)]                 ; $ is the implicit db name
                                         :find   [ (pull ?eid [:location]) ]   ; output :location for each ?eid found
-                                        :where  { :db/id ?eid :location _ } )        ; find any ?eid with a :location attr
+                                        :where  { :db/id ?eid :location _ } ) ; find any ?eid with a :location attr
         result-sort     (sort-by #(-> % only :location) result-pull)
   ]
     (s/validate [ts/TupleMap]   result-pull)  ; a list of tuples of maps
@@ -336,19 +337,19 @@
                      ["M" "London"]
                      ["Honey Rider" "Caribbean"]}))
 
+  ;---------------------------------------------------------------------------------------------------
+  ; Let's add some Bond girls into the DB
+
   (defn get-bond-girl-names []
     (let [result-pull     (d/pull (live-db) [:bond-girl] [:person/name "James Bond"])
           bond-girl-names (forv [girl-entity (grab :bond-girl result-pull) ]
-                               (grab :person/name (td/entity-map (live-db) (grab :db/id girl-entity))))
-          ]
-
+                               (grab :person/name (td/entity-map (live-db) (grab :db/id girl-entity)))) ]
       bond-girl-names))
 
   (td/transact *conn*
     (td/new-attribute :bond-girl :db.type/ref :db.cardinality/many)  ; there are many Bond girls
-    (td/new-attribute :best-friend :db.type/ref)  ; one can have many friends
+    (td/new-attribute :best-friend :db.type/ref))  ; one can have many friends
 
-)
   ; #todo modify to use tempIds (string or negative int)
   (let [tx-result          @(td/transact *conn*
                               (td/new-entity {:db/id "user" :person/name "Sylvia Trench" :best-friend "tr"})
@@ -359,7 +360,7 @@
                               (td/new-entity {:db/id "pc" :person/name "Paris Carver" :best-friend "cj"})
                               (td/new-entity {:db/id "cj" :person/name "Christmas Jones" :best-friend "pc"}))
         tx-datoms          (td/tx-datoms (live-db) tx-result)
-        girl-datoms        (vec (remove #(= :db/txInstant (grab :a %)) tx-datoms))
+        girl-datoms        (drop-if #(= :db/txInstant (grab :a %)) tx-datoms)
         girl-eids          (mapv :e girl-datoms)
         txr-2              (td/transact *conn*
                              (td/update [:person/name "James Bond"] ; update using a LookupRef
