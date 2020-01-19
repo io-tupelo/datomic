@@ -17,7 +17,7 @@
   []
   (let [eids (onlies (td/query
                        :let [$ (d/db *conn*)]
-                       :result [?eid] ; <- could also use Datomic Pull API
+                       :yield [?eid] ; <- could also use Datomic Pull API
                        :where  {:db/id ?eid :person/name ?tmp}))]
     (set (for [eid eids]
            (td/entity-map (d/db *conn*) eid)))))
@@ -96,15 +96,15 @@
 (dotest
   (let [james-eid (only2 (td/query
                            :let [$ (d/db *conn*)]
-                           :result [?eid]
+                           :yield [?eid]
                            :where {:db/id ?eid :person/name "James Bond"}))]
     (let [eids (td/query :let [$ (d/db *conn*)]
-                 :result [?eid]
+                 :yield [?eid]
                  :where {:db/id ?eid :person/name "James Bond" :weapon/type :weapon/wit}
                  {:db/id ?eid :location "London"})]
       (is (= james-eid (only2 eids))))
     (let [eids (td/query :let [$ (d/db *conn*)]
-                 :result [?eid]
+                 :yield [?eid]
                  :where {:db/id ?eid :person/name "James Bond" :weapon/type :weapon/wit}
                  {:db/id ?eid :location "Caribbean"})]
       (is (= #{} eids)))

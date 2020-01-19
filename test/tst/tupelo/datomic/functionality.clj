@@ -35,7 +35,7 @@
   "Returns a set of entity maps for all entities with the :person/name attribute"
   [db-val :- s/Any]
   (let [eids (onlies (td/query :let [$ db-val]
-                       :result [?eid] ; <- could also use Datomic Pull API
+                       :yield [?eid] ; <- could also use Datomic Pull API
                        :where {:db/id ?eid :person/name _}))]
     (set  (for [eid eids]
             (td/entity-map db-val eid)))))

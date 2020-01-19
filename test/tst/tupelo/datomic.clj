@@ -203,6 +203,6 @@
 
 (dotest
   (let [proxy-contains-pull? #'td/contains-pull? ] ; trick to get around private var
-    (is       (proxy-contains-pull? [:result '[xx (pull [*]) ?y ]] ))
-    (is (not  (proxy-contains-pull? [:result '[xx            ?y ]] )))))
+    (is       (proxy-contains-pull? [:yield '[xx (pull [*]) ?y ]] ))
+    (is (not  (proxy-contains-pull? [:yield '[xx            ?y ]] )))))
 

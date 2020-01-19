@@ -256,8 +256,8 @@
   (d/transact conn tx-specs))
 
 ;---------------------------------------------------------------------------------------------------
-; Process the ":where" clause in the find-base macro
 (s/defn ^:no-doc where-clause :- ts/TupleList
+  "Process the ":where" clause in the find-base macro"
   [maps :- ts/MapList]
   (apply glue
     (forv [curr-map maps]
@@ -286,17 +286,17 @@
      let-map       (apply hash-map let-vec)                    _ (spyx let-map)
      let-syms      (keys let-map)                              _ (spyx let-syms)
      let-srcs      (vals let-map)                              _ (spyx let-srcs)
-     result-vec    (grab :result args-map)                     _ (spyx result-vec)
+     yield-vec    (grab :yield args-map)                     _ (spyx yield-vec)
      where-vec     (grab :where args-map)                      _ (spyx where-vec)
      ]
     (flush)
     (when-not (vector? let-vec)
       (throw (IllegalArgumentException. (str "find-base: value for :let must be a vector; received=" let-vec))))
-    (when-not (vector? result-vec)
-      (throw (IllegalArgumentException. (str "find-base: value for :result must be a vector; received=" result-vec))))
+    (when-not (vector? yield-vec)
+      (throw (IllegalArgumentException. (str "find-base: value for :yield must be a vector; received=" yield-vec))))
     (when-not (vector? where-vec)
       (throw (IllegalArgumentException. (str "find-base: value for :where must be a vector; received=" where-vec))))
-    `(d/q  '{:find   ~result-vec
+    `(d/q  '{:find   ~yield-vec
              :where  ~where-vec
              :in     [ ~@let-syms ] }
            ~@let-srcs)))
@@ -309,7 +309,7 @@
     (td/query
        :let    [$        (d/db *conn*)     ; assign multiple variables just like
                 ?name    \"Caribbean\"]    ;   in Clojure 'let' special form
-       :result [?e ?name]
+       :yield [?e ?name]
        :where  {:db/id ?eid  :person/name ?name  :location ?loc}
                {:db/id ?eid  :weapon/type :weapon/wit} )
 
@@ -326,7 +326,7 @@
  "Returns true if a sequence of symbols includes 'pull'"
   [args-vec]
   (let [args-map    (apply hash-map args-vec)
-        find-vec    (flatten [ (grab :result args-map) ] ) ]
+        find-vec    (flatten [ (grab :yield args-map) ] ) ]
     (has-some? #(= 'pull %) find-vec)))
 
 (defmacro query-pull
@@ -334,10 +334,10 @@
   use with the Datomic Pull API. Usage:
 
     (td/find-pull   :let    [$ (d/db *conn*) ]
-                    :result [ (pull ?eid [:location]) ]
+                    :yield [ (pull ?eid [:location]) ]
                     :where  { :db/td ?eid :location ?loc } )
 
-  It is an error if the :result clause does not contain a Datomic Pull API request.  "
+  It is an error if the :yield clause does not contain a Datomic Pull API request.  "
   [& args]
   (when-not (contains-pull? args)
     (throw (IllegalArgumentException. 
@@ -353,7 +353,7 @@
   (let [expanded-result (macroexpand-1 '(tupelo.datomic/query-base
                                           :let [a (src 1)
                                                 b val-2]
-                                          :result [?e]
+                                          :yield [?e]
                                           :where {:db/id ?e :person/name ?name} ))]
     (= expanded-result
       '(datomic.api/q (quote {:find  [?e]

@@ -34,9 +34,10 @@
 (s/defn get-people :- ts/Set
   "Returns a set of entity maps for all entities with the :person/name attribute"
   [db-val :- s/Any]
-  (let [eids (onlies (td/query :let    [$ db-val]
-                                :result [?eid] ; <- could also use Datomic Pull API
-                                :where  {:db/id ?eid :person/name _} ))]
+  (let [eids (onlies (td/query
+                       :let [$ db-val]
+                       :yield [?eid] ; <- could also use Datomic Pull API
+                       :where {:db/id ?eid :person/name _}))]
     (set (for [eid eids]
            (td/entity-map db-val eid)))))
 
@@ -84,7 +85,7 @@
 
   ; Using James' name, lookup his EntityId (EID). It is a java.lang.Long that is a unique ID across the whole DB.
   (let [james-eid   (only2 (td/query  :let [$ (live-db)] ; like Clojure let
-                                     :result [?eid]
+                                     :yield [?eid]
                                      :where {:db/id ?eid :person/name "James Bond"}))
         _ (s/validate ts/Eid james-eid)  ; verify the expected type
         ; Retrieve James' attr-val pairs as a map. An entity can be referenced either by EID or by a
@@ -119,10 +120,11 @@
 
     ;-----------------------------------------------------------------------------
     ; Search for people that match both {:weapon/type :weapon/guile} and {:weapon/type :weapon/gun}
-    (let [tuple-set   (td/query :let    [$ (live-db)]
-                               :result   [?name]
-                               :where  {:person/name ?name :weapon/type :weapon/guile }
-                                       {:person/name ?name :weapon/type :weapon/gun } ) ]
+    (let [tuple-set (td/query
+                      :let [$ (live-db)]
+                      :yield [?name]
+                      :where  {:person/name ?name :weapon/type :weapon/guile}
+                              {:person/name ?name :weapon/type :weapon/gun}) ]
       (is= #{["Dr No"] ["M"]} tuple-set ))
 
     ;-----------------------------------------------------------------------------
@@ -171,7 +173,7 @@
   ; tuples in the result will be discarded.
   (let [tuple-set (td/query
                     :let [$ (live-db)]
-                    :result [?name ?loc] ; <- shape of output tuples
+                    :yield [?name ?loc] ; <- shape of output tuples
                     :where {:person/name ?name :location ?loc})]
     (s/validate  ts/TupleSet  tuple-set)       ; verify expected type using Prismatic Schema
     (s/validate #{ [s/Any] }  tuple-set)       ; literal definition of TupleSet
@@ -183,10 +185,10 @@
   ; tuples) use (onlies ...).  As usual, any duplicate values will be discarded. It is an error if
   ; more than one attribute is present in the :result clause.
   (let [names     (onlies (td/query :let [$ (live-db)]
-                            :result [?name] ; <- a single attr-val output
+                            :yield [?name] ; <- a single attr-val output
                             :where {:person/name ?name}))
         cities    (onlies (td/query :let [$ (live-db)]
-                            :result [?loc] ; <- a single attr-val output
+                            :yield [?loc] ; <- a single attr-val output
                             :where {:location ?loc}))
         ]
     (is= names    #{"Dr No" "James Bond" "M"} )  ; all names are present, since unique
@@ -195,12 +197,12 @@
   ; If you want just a single tuple as output, use (only ...)
   (let [beachy    (only (td/query :let [$ (live-db) ; assign multiple find variables
                                        ?loc "Caribbean"] ;   just like clojure 'let' special form
-                          :result [?eid ?name] ; <- output tuple shape
+                          :yield [?eid ?name] ; <- output tuple shape
                           :where {:db/id ?eid :person/name ?name :location ?loc}))
         busy      (try ; error - both James & M are in London
                     (only (td/query :let [$ (live-db)
                                          ?loc "London"]
-                            :result [?eid ?name] ; <- output tuple shape
+                            :yield [?eid ?name] ; <- output tuple shape
                             :where {:db/id ?eid :person/name ?name :location ?loc}))
                     (catch Exception ex (.toString ex)))
   ]
@@ -211,18 +213,18 @@
   ;   It translates into `(only (only ...))`, like "only-squared".
   (let [beachy    (only2 (td/query :let [$ (live-db) ; assign multiple find variables
                                         ?loc "Caribbean"] ; just like clojure 'let' special form
-                           :result [?name]
+                           :yield [?name]
                            :where {:person/name ?name :location ?loc}))
         busy      (try ; error - multiple results for London
                     (only2 (td/query :let [$ (live-db)
                                           ?loc "London"]
-                             :result [?eid]
+                             :yield [?eid]
                              :where {:db/id ?eid :person/name ?name :location ?loc}))
                     (catch Exception ex (.toString ex)))
         multi     (try ; error - tuple [?eid ?name] is not scalar
                     (only2 (td/query :let [$ (live-db)
                                           ?loc "Caribbean"]
-                             :result [?eid ?name]
+                             :yield [?eid ?name]
                              :where {:db/id ?eid :person/name ?name :location ?loc}))
                     (catch Exception ex (.toString ex)))
   ]
@@ -237,7 +239,7 @@
   ; If you wish to retain duplicate results on output, you must use td/find-pull and the Datomic
   ; Pull API to return a list of results (instead of a set).
   (let [result-pull     (td/query-pull   :let    [$ (live-db)]                 ; $ is the implicit db name
-                                        :result   [ (pull ?eid [:location]) ]   ; output :location for each ?eid found
+                                        :yield   [ (pull ?eid [:location]) ]   ; output :location for each ?eid found
                                         :where  { :db/id ?eid :location _ } ) ; find any ?eid with a :location attr
         result-sort     (sort-by #(-> % only :location) result-pull)
   ]
@@ -318,7 +320,7 @@
   ; Once James has defeated Dr No, we need to remove him (& everything he possesses) from the database.
   ; We see that Dr No is in the DB...
   (let [tuple-set   (td/query  :let    [$ (live-db)]
-                              :result   [?name ?loc] ; <- shape of output tuples
+                              :yield   [?name ?loc] ; <- shape of output tuples
                               :where  {:person/name ?name :location ?loc} ) ]
     (is= tuple-set #{["James Bond" "London"]
                      ["M" "London"]
@@ -329,7 +331,7 @@
     (td/retract-entity [:person/name "Dr No"] ))
   ; ...and now he's gone!
   (let [tuple-set   (td/query  :let    [$ (live-db)]
-                              :result   [?name ?loc]
+                              :yield   [?name ?loc]
                               :where  {:person/name ?name :location ?loc} ) ]
     (is= tuple-set #{["James Bond" "London"]
                      ["M" "London"]
@@ -378,7 +380,7 @@
            "Octopussy" "Paris Carver" "Christmas Jones" "Honey Rider"] ))
 
     (let [bibi-eid (only (only (td/query :let [$ (live-db)]
-                                 :result [?eid]
+                                 :yield [?eid]
                                  :where {:db/id ?eid :person/name "Bibi Dahl"})))
 
           bibi     (td/entity-map (live-db) bibi-eid)
