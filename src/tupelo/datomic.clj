@@ -256,8 +256,6 @@
   (d/transact conn tx-specs))
 
 ;---------------------------------------------------------------------------------------------------
-; Find
-
 ; Process the ":where" clause in the find-base macro
 (s/defn ^:no-doc where-clause :- ts/TupleList
   [maps :- ts/MapList]
@@ -275,43 +273,45 @@
   ; returns a HashSet of datomic entity objects
   "Base macro for improved API syntax for datomic.api/q query function (Entity API)"
   [& args]
-  ; (newline) (println "find-base =>" args)
+  (newline) (println "find-base =>" args)
   (when-not (= :where (nth args 4))
     (throw (IllegalArgumentException. 
       (str "find-base: 5th arg must be :where, received=" args))))
-  (let [let-find-map      (apply hash-map (take 4 args))                ; _ (spyx let-find-map)
-        where-entries     (where-clause (drop 5 args))                    ; _ (spyx where-entries)
-        args-map          (glue let-find-map {:where where-entries} )   ; _ (spyx args-map)
-        let-vec           (grab :let args-map)                          ; _ (spyx let-vec)
-        let-map           (apply hash-map let-vec)                      ; _ (spyx let-map)
-        let-syms          (keys let-map)                                ; _ (spyx let-syms)
-        let-srcs          (vals let-map)                                ; _ (spyx let-srcs)
-        find-vec          (grab :find args-map)                         ; _ (spyx find-vec)
-        where-vec         (grab :where args-map)                        ; _ (spyx where-vec)
-  ]
+  (let
+    [
+     let-find-map  (apply hash-map (take 4 args))              _ (spyx let-find-map)
+     where-entries (where-clause (drop 5 args))                _ (spyx where-entries)
+     args-map      (glue let-find-map {:where where-entries})  _ (spyx args-map)
+     let-vec       (grab :let args-map)                        _ (spyx let-vec)
+     let-map       (apply hash-map let-vec)                    _ (spyx let-map)
+     let-syms      (keys let-map)                              _ (spyx let-syms)
+     let-srcs      (vals let-map)                              _ (spyx let-srcs)
+     result-vec    (grab :result args-map)                     _ (spyx result-vec)
+     where-vec     (grab :where args-map)                      _ (spyx where-vec)
+     ]
     (flush)
     (when-not (vector? let-vec)
       (throw (IllegalArgumentException. (str "find-base: value for :let must be a vector; received=" let-vec))))
-    (when-not (vector? find-vec)
-      (throw (IllegalArgumentException. (str "find-base: value for :find must be a vector; received=" find-vec))))
+    (when-not (vector? result-vec)
+      (throw (IllegalArgumentException. (str "find-base: value for :result must be a vector; received=" result-vec))))
     (when-not (vector? where-vec)
       (throw (IllegalArgumentException. (str "find-base: value for :where must be a vector; received=" where-vec))))
-    `(d/q  '{:find   ~find-vec
+    `(d/q  '{:find   ~result-vec
              :where  ~where-vec
              :in     [ ~@let-syms ] }
            ~@let-srcs)))
 
-; #todo: rename find -> query   ???
 ; #todo change :find -> :return  ?
 (defmacro query
   "Returns search results as a set of tuples (i.e. a TupleSet, or #{ [s/Any] } in Prismatic Schema),
    where each tuple is unique. Usage:
 
-    (td/find  :let    [$        (d/db *conn*)     ; assign multiple variables just like
-                       ?name    \"Caribbean\"]    ;   in Clojure 'let' special form
-              :find   [?e ?name]
-              :where  {:db/id ?eid  :person/name ?name  :location ?loc}
-                      {:db/id ?eid  :weapon/type :weapon/wit} )
+    (td/query
+       :let    [$        (d/db *conn*)     ; assign multiple variables just like
+                ?name    \"Caribbean\"]    ;   in Clojure 'let' special form
+       :result [?e ?name]
+       :where  {:db/id ?eid  :person/name ?name  :location ?loc}
+               {:db/id ?eid  :weapon/type :weapon/wit} )
 
   Unlike datomic.api/q, the query form does not need to be wrapped in a map literal nor is any
   quoting required. Most importantly, the :in keyword has been replaced with the :let keyword, and
@@ -326,7 +326,7 @@
  "Returns true if a sequence of symbols includes 'pull'"
   [args-vec]
   (let [args-map    (apply hash-map args-vec)
-        find-vec    (flatten [ (grab :find args-map) ] ) ]
+        find-vec    (flatten [ (grab :result args-map) ] ) ]
     (has-some? #(= 'pull %) find-vec)))
 
 (defmacro query-pull
@@ -334,10 +334,10 @@
   use with the Datomic Pull API. Usage:
 
     (td/find-pull   :let    [$ (d/db *conn*) ]
-                    :find   [ (pull ?eid [:location]) ]
+                    :result [ (pull ?eid [:location]) ]
                     :where  { :db/td ?eid :location ?loc } )
 
-  It is an error if the :find clause does not contain a Datomic Pull API request.  "
+  It is an error if the :result clause does not contain a Datomic Pull API request.  "
   [& args]
   (when-not (contains-pull? args)
     (throw (IllegalArgumentException. 
@@ -353,7 +353,7 @@
   (let [expanded-result (macroexpand-1 '(tupelo.datomic/query-base
                                           :let [a (src 1)
                                                 b val-2]
-                                          :find [?e]
+                                          :result [?e]
                                           :where {:db/id ?e :person/name ?name} ))]
     (= expanded-result
       '(datomic.api/q (quote {:find  [?e]

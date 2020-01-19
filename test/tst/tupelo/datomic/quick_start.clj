@@ -90,7 +90,7 @@
 
       (is= (onlies (td/query
                      :let [$ (d/db conn)]
-                     :find [?name] ; <- could also use Datomic Pull API
+                     :result [?name] ; <- could also use Datomic Pull API
                      :where {:movie/title ?name}))
         #{"Repo Man" "Commando" "The Goonies"}))
 
