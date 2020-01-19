@@ -88,7 +88,7 @@
         (td/new-entity {:movie/title "Commando" :movie/genre "action/adventure" :movie/release-year 1985})
         (td/new-entity {:movie/title "Repo Man" :movie/genre "punk dystopia" :movie/release-year 1984}))
 
-      (is= (onlies (td/find
+      (is= (onlies (td/query
                      :let [$ (d/db conn)]
                      :find [?name] ; <- could also use Datomic Pull API
                      :where {:movie/title ?name}))

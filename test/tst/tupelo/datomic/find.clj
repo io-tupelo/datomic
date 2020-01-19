@@ -15,7 +15,7 @@
 (s/defn get-people :- ts/Set
   "Returns a set of entity maps for all entities with the :person/name attribute"
   []
-  (let [eids (onlies (td/find
+  (let [eids (onlies (td/query
                        :let [$ (d/db *conn*)]
                        :find [?eid] ; <- could also use Datomic Pull API
                        :where  {:db/id ?eid :person/name ?tmp}))]
@@ -94,16 +94,16 @@
 ;  (is (td/t-query)))
 
 (dotest
-  (let [james-eid (only2 (td/find
+  (let [james-eid (only2 (td/query
                            :let [$ (d/db *conn*)]
                            :find [?eid]
                            :where {:db/id ?eid :person/name "James Bond"}))]
-    (let [eids (td/find :let [$ (d/db *conn*)]
+    (let [eids (td/query :let [$ (d/db *conn*)]
                  :find [?eid]
                  :where {:db/id ?eid :person/name "James Bond" :weapon/type :weapon/wit}
                  {:db/id ?eid :location "London"})]
       (is (= james-eid (only2 eids))))
-    (let [eids (td/find :let [$ (d/db *conn*)]
+    (let [eids (td/query :let [$ (d/db *conn*)]
                  :find [?eid]
                  :where {:db/id ?eid :person/name "James Bond" :weapon/type :weapon/wit}
                  {:db/id ?eid :location "Caribbean"})]

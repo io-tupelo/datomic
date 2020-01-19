@@ -259,7 +259,7 @@
 ; Find
 
 ; Process the ":where" clause in the find-base macro
-(s/defn ^:no-doc find-where :- ts/TupleList
+(s/defn ^:no-doc where-clause :- ts/TupleList
   [maps :- ts/MapList]
   (apply glue
     (forv [curr-map maps]
@@ -271,7 +271,7 @@
 
 ; #todo need checks to stop collection result (:find [?e ...])
 ; #todo and scalar result (:find [?e .])
-(defmacro ^:no-doc find-base    ; #todo remember 'with'
+(defmacro ^:no-doc query-base    ; #todo remember 'with'
   ; returns a HashSet of datomic entity objects
   "Base macro for improved API syntax for datomic.api/q query function (Entity API)"
   [& args]
@@ -280,7 +280,7 @@
     (throw (IllegalArgumentException. 
       (str "find-base: 5th arg must be :where, received=" args))))
   (let [let-find-map      (apply hash-map (take 4 args))                ; _ (spyx let-find-map)
-        where-entries     (find-where (drop 5 args))                    ; _ (spyx where-entries)
+        where-entries     (where-clause (drop 5 args))                    ; _ (spyx where-entries)
         args-map          (glue let-find-map {:where where-entries} )   ; _ (spyx args-map)
         let-vec           (grab :let args-map)                          ; _ (spyx let-vec)
         let-map           (apply hash-map let-vec)                      ; _ (spyx let-map)
@@ -303,7 +303,7 @@
 
 ; #todo: rename find -> query   ???
 ; #todo change :find -> :return  ?
-(defmacro find
+(defmacro query
   "Returns search results as a set of tuples (i.e. a TupleSet, or #{ [s/Any] } in Prismatic Schema),
    where each tuple is unique. Usage:
 
@@ -319,7 +319,7 @@
   variables $ and ?name in this case) are more closely aligned with their actual values. Also, the
   implicit DB $ must be explicitly tied to its data source in all cases (as shown above)."
   [& args]
-  `(set (for [tuple# (find-base ~@args) ]
+  `(set (for [tuple# (query-base ~@args) ]
           (vec tuple#))))
 
 (defn- ^:no-doc contains-pull?  ; prevent codox ("lein doc") from processing
@@ -329,7 +329,7 @@
         find-vec    (flatten [ (grab :find args-map) ] ) ]
     (has-some? #(= 'pull %) find-vec)))
 
-(defmacro find-pull
+(defmacro query-pull
  "Returns a TupleList [Tuple] of query results, where items may be duplicated. Intended only for
   use with the Datomic Pull API. Usage:
 
@@ -342,23 +342,25 @@
   (when-not (contains-pull? args)
     (throw (IllegalArgumentException. 
              (str "query-pull: Only intended for queries using the Datomic Pull API"))))
-  `(forv [tuple# (find-base ~@args) ]
+  `(forv [tuple# (query-base ~@args) ]
       (vec tuple#)))
 
 ; #todo: convert to t-find
 ; #todo: write blog post/forum letter about this testing technique
-;(defn t-query
-;  "Test the query macro, returns true on success."
-;  []
-;  (let [expanded-result (macroexpand-1 '(tupelo.datomic/-base :let [a (src 1)
-;                                                                         b val-2]
-;                                          :find [?e]
-;                                          :where [[?e :person/name ?name]]))]
-;    (= expanded-result
-;      '(datomic.api/q (quote {:find  [?e]
-;                              :in    [a b]
-;                              :where [[?e :person/name ?name]]})
-;         (src 1) val-2))))
+(defn t-query
+  "Test the query macro, returns true on success."
+  []
+  (let [expanded-result (macroexpand-1 '(tupelo.datomic/query-base
+                                          :let [a (src 1)
+                                                b val-2]
+                                          :find [?e]
+                                          :where {:db/id ?e :person/name ?name} ))]
+    (= expanded-result
+      '(datomic.api/q (quote {:find  [?e]
+                              :in    [a b]
+                              :where [[?e :person/name ?name]]})
+         (src 1)
+         val-2))))
 
 ;------------------------------------------------------------------------------------------------------------------
 ;---------------------------------------------------------------------------------------------------
