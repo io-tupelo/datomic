@@ -98,12 +98,14 @@
                            :let [$ (d/db *conn*)]
                            :yield [?eid]
                            :where {:db/id ?eid :person/name "James Bond"}))]
-    (let [eids (td/query :let [$ (d/db *conn*)]
+    (let [eids (td/query
+                 :let [$ (d/db *conn*)]
                  :yield [?eid]
                  :where {:db/id ?eid :person/name "James Bond" :weapon/type :weapon/wit}
                  {:db/id ?eid :location "London"})]
       (is (= james-eid (only2 eids))))
-    (let [eids (td/query :let [$ (d/db *conn*)]
+    (let [eids (td/query
+                 :let [$ (d/db *conn*)]
                  :yield [?eid]
                  :where {:db/id ?eid :person/name "James Bond" :weapon/type :weapon/wit}
                  {:db/id ?eid :location "Caribbean"})]

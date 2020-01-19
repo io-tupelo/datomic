@@ -308,7 +308,7 @@
     (td/query
        :let    [$        (d/db *conn*)     ; assign multiple variables just like
                 ?name    \"Caribbean\"]    ;   in Clojure 'let' special form
-       :yield [?e ?name]
+       :yield  [?e ?name]
        :where  {:db/id ?eid  :person/name ?name  :location ?loc}
                {:db/id ?eid  :weapon/type :weapon/wit} )
 
@@ -316,7 +316,9 @@
   quoting required. Most importantly, the :in keyword has been replaced with the :let keyword, and
   the syntax has been copied from the Clojure let special form so that both the query variables (the
   variables $ and ?name in this case) are more closely aligned with their actual values. Also, the
-  implicit DB $ must be explicitly tied to its data source in all cases (as shown above)."
+  implicit DB $ must be explicitly tied to its data source in all cases (as shown above).
+  The `:let` and `:yield` clauses may be in any order, but the `:where` clause must come last.
+  "
   [& args]
   `(set (for [tuple# (query-base ~@args) ]
           (vec tuple#))))
