@@ -3,7 +3,7 @@
 
 === image:https://img.shields.io/clojars/v/io.tupelo/datomic.svg[link="https://clojars.org/io.tupelo/datomic"]  <= Current Version (click for dep string)
 
-=== https://cloojure.github.io/doc/io-tupelo-datomic/[The Tupelo-Datomic API Docs] are on GitHub Pages
+=== The https://cloojure.github.io/doc/io-tupelo-datomic/[Tupelo-Datomic API Docs] are on GitHub Pages
 
 == Overview
 
