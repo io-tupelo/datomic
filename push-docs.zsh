@@ -1,10 +1,10 @@
 #!/bin/zsh
 
 # Controlling values
-readonly ghPagesDir=~/gh-pages          # must be absolute pathname
-readonly projName="tupelo-datomic"
+readonly ghPagesDir=~/gh-pages/doc      # must be absolute pathname
+readonly projName="io-tupelo-datomic"
 
-srcDir=$(pwd)/target/base+system+user+dev/doc   # absolute pathname of source
+srcDir=$(pwd)/target/default/doc        # absolute pathname of source 
 destDir=${ghPagesDir}/${projName}       # absolute pathname of destination
 
 # Copy files
@@ -15,7 +15,7 @@ cp -pr          $srcDir      $destDir
 
 # Commit changes
 pushd ${ghPagesDir}
-  git add $projName
-  git commit --all -m"Update docs for $projName"
+  git add ${projName}
+  git commit --all -m"Update docs for ${projName}"
   git push --set-upstream
 popd

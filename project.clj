@@ -1,4 +1,4 @@
-(defproject io.tupelo/datomic "19.12.01"
+(defproject io.tupelo/datomic "20.01.19"
   :description "Tupelo Datomic:  Datomic With A Spoonful of Honey"
   :url "https://github.com/io-tupelo/datomic"
   :license {:name "Eclipse Public License"

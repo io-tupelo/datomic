@@ -5,8 +5,7 @@ Leiningen coordinates:
 
 image:http://clojars.org/tupelo-datomic/latest-version.svg[ http://clojars.org/tupelo-datomic ]
 
-
-=== The Tupelo-Datomic API Docs http://cloojure.github.io/doc/tupelo-datomic[are posted on GitHub Pages]
+=== The Tupelo-Datomic API Docs https://cloojure.github.io/doc/io-tupelo-datomic/[are posted on GitHub Pages]
 
 == Overview
 
