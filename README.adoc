@@ -526,12 +526,12 @@ Tupelo-Datomic API docs] for details).
 Lots more to come!
 
 == Requirements
- - Clojure 1.7.0
+ - Clojure 1.8.0
  - Java 1.8
 
 == License
 
-Copyright © 2015-2017  Alan Thompson
+Copyright © 2015-2020  Alan Thompson
 
 Distributed under the link:https://www.eclipse.org/legal/epl-v10.html[Eclipse Public License], the same as Clojure.
 
