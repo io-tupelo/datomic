@@ -1,11 +1,9 @@
 
-= Tupelo: Making Datomic Even Sweeter
+= Tupelo Datomic: Making Datomic Even Sweeter
 
-Leiningen coordinates:   
+=== image:https://img.shields.io/clojars/v/io.tupelo/datomic.svg[link="https://clojars.org/io.tupelo/datomic"]  <= Current Version (click for dep string)
 
-image:http://clojars.org/tupelo-datomic/latest-version.svg[ http://clojars.org/tupelo-datomic ]
-
-=== The Tupelo-Datomic API Docs https://cloojure.github.io/doc/io-tupelo-datomic/[are posted on GitHub Pages]
+=== https://cloojure.github.io/doc/io-tupelo-datomic/[The Tupelo-Datomic API Docs] are on GitHub Pages
 
 == Overview
 
