@@ -5,7 +5,7 @@
     [datomic.api :as d]
     [schema.core :as s]
     [tupelo.datomic :as td]
-    [tupelo.schema :as ts]
+    [tupelo.datomic.schema :as tdsk]
   ))
 
 (def datomic-uri "datomic:mem://tupelo")          ; the URI for our test db
@@ -171,7 +171,7 @@
     (is (wild-match? #db/id[:dummy.part/name :*] dbid)) ; #db/id[:dummy.part/name -1000003]
     (is (= [:part :dummy.part/name] part1))
     (is (wild-match? [:idx :*] part2))
-    (is (s/validate ts/Eid (second part2)))))
+    (is (s/validate tdsk/Eid (second part2)))))
 
 (dotest
   (is (submatch? {:db/ident :weapon.type/gun} (td/new-enum :weapon.type/gun)))

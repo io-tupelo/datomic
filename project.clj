@@ -7,7 +7,7 @@
                  [com.datomic/datomic-free "0.9.5703.21"]
                  [org.clojure/clojure "1.10.1"]
                  [prismatic/schema "1.1.12"]
-                 [tupelo "0.9.182"]
+                 [tupelo "0.9.188"]
                  ]
   :resource-paths ["resources/" ]
   :profiles { :dev {:dependencies []

@@ -6,6 +6,7 @@
     [schema.core :as s]
     [tupelo.datomic :as td]
     [tupelo.schema :as ts]
+    [tupelo.datomic.schema :as tdsk]
     ))
 
 (def datomic-uri "datomic:mem://tst.bond") ; the URI for our test db
@@ -88,7 +89,7 @@
                              :let [$ (live-db)] ; like Clojure let
                              :yield [?eid]
                              :where {:db/id ?eid :person/name "James Bond"}))
-        _ (s/validate ts/Eid james-eid)  ; verify the expected type
+        _ (s/validate tdsk/Eid james-eid)  ; verify the expected type
         ; Retrieve James' attr-val pairs as a map. An entity can be referenced either by EID or by a
         ; LookupRef, which is a unique attribute-value pair expressed as a vector.
         james-map   (td/entity-map (live-db) james-eid)                       ; lookup by EID
@@ -124,9 +125,10 @@
     (let [tuple-set (td/query
                       :let [$ (live-db)]
                       :yield [?name]
-                      :where  {:person/name ?name :weapon/type :weapon/guile}
-                              {:person/name ?name :weapon/type :weapon/gun}) ]
-      (is= #{["Dr No"] ["M"]} tuple-set ))
+                      :where
+                        {:person/name ?name :weapon/type :weapon/guile}
+                        {:person/name ?name :weapon/type :weapon/gun})]
+      (is= #{["Dr No"] ["M"]} tuple-set))
 
     ;-----------------------------------------------------------------------------
     ; Try to add non-existent weapon. This throws since the bogus kw does not match up with an entity.
@@ -284,7 +286,7 @@
         [honey-eid] (td/eids tx-result) ; retrieve Honey Rider's EID from the seq (destructuring)
         honey-eid2 (only (td/eids tx-result)) ;   or use 'only' to unwrap it
         tx-datoms  (td/tx-datoms (live-db) tx-result)]
-    (s/validate ts/Eid honey-eid)  ; verify the expected type
+    (s/validate tdsk/Eid honey-eid)  ; verify the expected type
     (is= honey-eid honey-eid2)
     (is= :people ; verify the partition name for Honey's EID
            (td/partition-name (live-db) honey-eid))

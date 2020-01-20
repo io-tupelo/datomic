@@ -4,8 +4,8 @@
   (:require
     [datomic.api :as d]
     [schema.core :as s]
-    [tupelo.datomic.schema :as tsd] ; #todo tsd -> tds
-    [tupelo.schema :as ts]
+    [tupelo.datomic.schema :as tdsk] ; #todo tsd -> tds
+    [tupelo.schema :as tsk]
   ))
 
 ;---------------------------------------------------------------------------------------------------
@@ -106,7 +106,7 @@
 ;---------------------------------------------------------------------------------------------------
 ; Core functions
 
-(s/defn new-partition :- ts/KeyMap
+(s/defn new-partition :- tsk/KeyMap
  "Returns the tx-data to create a new partition in the DB. Usage:
 
   (td/transact *conn*
@@ -119,7 +119,7 @@
     :db.install/_partition    :db.part/db   ; Ceremony so Datomic "installs" our new partition
     :db/ident                 ident } )     ; The "name" of our new partition
 
-(s/defn new-attribute    :- ts/KeyMap
+(s/defn new-attribute    :- tsk/KeyMap
  "Returns the tx-data to create a new attribute in the DB.  Usage:
 
     (td/transact *conn*
@@ -171,7 +171,7 @@
     tx-specs))
 
 ; #todo need test
-(s/defn new-entity  :- ts/KeyMap
+(s/defn new-entity  :- tsk/KeyMap
  "Returns the tx-data to create a new entity in the DB. Usage:
 
     (td/transact *conn*
@@ -180,16 +180,16 @@
 
   where attr-val-map is a Clojure map containing attribute-value pairs to be added to the new
   entity."
-  ( [ attr-val-map    :- ts/KeyMap ]
+  ( [ attr-val-map    :- tsk/KeyMap ]
    (new-entity :db.part/user attr-val-map))
   ( [ -partition      :- s/Keyword
-      attr-val-map    :- ts/KeyMap ]
+      attr-val-map    :- tsk/KeyMap ]
     (glue {:db/id (d/tempid -partition) } attr-val-map)))
 
 ; #todo pair create-enum (rename) & create-or-verify-enum (idempotent)
 ;         declarative: describes desired end state, not how to get there
 ; #todo need test
-(s/defn new-enum :- ts/KeyMap   ; #todo add namespace version
+(s/defn new-enum :- tsk/KeyMap   ; #todo add namespace version
  "Returns the tx-data to create a new enumeration entity in the DB. Usage:
 
     (td/transact *conn*
@@ -203,7 +203,7 @@
 
 ; #todo  -  document entity-spec as EID or refspec in all doc-strings
 ; #todo  -  document use of "ident" in all doc-strings (EntityIdent?)
-(s/defn update :- ts/KeyMap
+(s/defn update :- tsk/KeyMap
  "Returns the tx-data to update an existing entity. Usage:
 
     (td/transact *conn*
@@ -213,12 +213,12 @@
    entity.  For attributes with :db.cardinality/one, Datomic will (automatically) retract the
    previous value prior to the insertion of the new value. For attributes with :db.cardinality/many,
    the new value will be accumulated into the current set of values."
-  [entity-spec    :- ts/EntitySpec
-   attr-val-map   :- ts/KeyMap ]
+  [entity-spec    :- tdsk/EntitySpec
+   attr-val-map   :- tsk/KeyMap ]
     (glue {:db/id entity-spec} attr-val-map))
 ; #todo error check: for each attr, if it is :card/many, verify value is a set!
 
-(s/defn retract-value :- ts/Quad
+(s/defn retract-value :- tsk/Quad
   "Returns the tx-data to retract an attribute-value pair for an entity. Only a single
    attribute-value pair can be retracted for each call to retract-value.  Usage:
 
@@ -226,12 +226,12 @@
       (retract-value entity-spec attribute value))
 
    where the attribute-value pair must exist for the entity or the retraction will fail.  " ; #todo verify
-  [entity-spec  :- ts/EntitySpec
+  [entity-spec  :- tdsk/EntitySpec
    attribute    :- s/Keyword
    value        :- s/Any ]
   [:db/retract entity-spec attribute value] )
 
-(s/defn retract-entity :- ts/Pair
+(s/defn retract-entity :- tsk/Pair
  "Returns the tx-data to retract all attribute-value pairs for an entity, as well as all references
   to the entity by other entities. Usage:
 
@@ -240,7 +240,7 @@
 
   If the retracted entity refers to any other entity through an attribute with :db/isComponent=true,
   the referenced entity will be recursively retracted as well."
-  [entity-spec  :- ts/EntitySpec ]
+  [entity-spec  :- tdsk/EntitySpec ]
   [:db.fn/retractEntity entity-spec] )
 
 ; #todo need test
@@ -256,9 +256,9 @@
   (d/transact conn tx-specs))
 
 ;---------------------------------------------------------------------------------------------------
-(s/defn ^:no-doc where-clause :- ts/TupleList
+(s/defn ^:no-doc where-clause :- tsk/TupleList
   "Process the `:where` clause in the find-base macro"
-  [maps :- ts/MapList]
+  [maps :- tsk/MapList]
   (apply glue
     (forv [curr-map maps]
       (let [eid-vec       [ (get curr-map :db/id (symbol "?tupelo-dummy-eid")) ]
@@ -368,25 +368,25 @@
 ; Informational functions
 
 ; #todo: make default?
-(s/defn entity-map-full :- ts/KeyMap  ; #todo - need test & -> demo/doc
+(s/defn entity-map-full :- tsk/KeyMap  ; #todo - need test & -> demo/doc
   "Returns a map of an entity's attribute-value pairs. A simpler, eager version of datomic/entity."
   [db-val         :- datomic.db.Db
-   entity-spec    :- ts/EntitySpec ]
+   entity-spec    :- tdsk/EntitySpec ]
   (let [ entity   (d/entity db-val entity-spec)   ; does not include :db/id attr/val
          eid      (:db/id entity) ]               ; ... unless we explicitly ask for it
     (into {:db/id eid} entity)))
 
-(s/defn entity-map :- ts/KeyMap  ; #todo - need test
+(s/defn entity-map :- tsk/KeyMap  ; #todo - need test
   "Returns a map of an entity's attribute-value pairs. A simpler, eager version of datomic/entity."
   [db-val         :- datomic.db.Db
-   entity-spec    :- ts/EntitySpec ]
+   entity-spec    :- tdsk/EntitySpec ]
   (into {} (d/entity db-val entity-spec)))
 
 ; #todo - need test
 (s/defn eid->ident :- s/Keyword
   "Returns the keyword ident value given an EID value"
   [db-val     :- datomic.db.Db
-   eid-val    :- ts/Eid]
+   eid-val    :- tdsk/Eid]
   (d/q '{:find  [?ident .]
          :in    [$ ?eid]
          :where [ [?eid :db/ident ?ident] ] }
@@ -395,7 +395,7 @@
 ; #todo write a blog post documenting keywords [:e :a :v :tx :added] for #datom[0 10 :db.part/db 13194139533312 true]
 ; (pr t1) => #datom[299067162756085 63 "Honey Rider" 13194139534324 true]
 ; #todo - need test
-(s/defn datom-map :- ts/DatomMap
+(s/defn datom-map :- tdsk/DatomMap
  "Returns a plain Clojure map of an datom's attribute-value pairs.
   A datom map is structured as:
 
@@ -414,7 +414,7 @@
 
 ; #todo - need test
 ; #todo - make non-lazy?
-(s/defn datoms :- [ts/DatomMap]
+(s/defn datoms :- [tdsk/DatomMap]
  "Returns a lazy sequence of Clojure maps of an datom's attribute-value pairs.
   A datom map is structured as:
 
@@ -435,7 +435,7 @@
 (s/defn tx-datoms :- s/Any
   "Returns a vector of datom-maps from a TxResult"
   [db-val     :- datomic.db.Db
-   tx-result  :- tsd/TxResult ]
+   tx-result  :- tdsk/TxResult ]
   (let [tx-data     (:tx-data tx-result)  ; a seq of datoms
         fn-datom    (fn [arg]  
                       "Replace attr-eid -> attr-ident in datom"
@@ -458,11 +458,11 @@
 (s/defn partition-name :- s/Keyword
   "Returns the partition name (the :db/ident value) for an Entity"
   [db-val       :- datomic.db.Db
-   entity-spec  :- ts/EntitySpec ]
+   entity-spec  :- tdsk/EntitySpec ]
   (d/ident db-val (d/part entity-spec)))
 
 ; #todo add example from bond to README
-(s/defn partition-eids  :- [ts/Eid]
+(s/defn partition-eids  :- [tdsk/Eid]
   "Returns a lazy sequence of all the EIDs in a partition."
   [db-val     :- datomic.db.Db
    part-kw    :- s/Keyword ]
@@ -488,11 +488,11 @@
 (s/defn is-transaction? :- s/Bool
   "Returns true if an entity is a transaction (i.e. it is in the :db.part/tx partition)"
   [db-val       :- datomic.db.Db
-   entity-spec  :- ts/EntitySpec ]
+   entity-spec  :- tdsk/EntitySpec ]
   (= :db.part/tx (partition-name db-val entity-spec)))
 
 ; #todo - need test
-(s/defn transactions :- [ ts/KeyMap ]
+(s/defn transactions :- [ tsk/KeyMap ]
   "Returns a lazy sequence of entity-maps for all DB transactions"
   [db-val :- datomic.db.Db]
   (let [; All transaction entities must have attr :db/txInstant
@@ -503,14 +503,14 @@
     result))
 
 ; #todo need test
-(s/defn eids :- [ts/Eid]
+(s/defn eids :- [tdsk/Eid]
   "Returns a collection of the EIDs created in a transaction."
-  [tx-result :- tsd/TxResult]
+  [tx-result :- tdsk/TxResult]
   (vals (grab :tempids tx-result)))
 
-(s/defn txid  :- ts/Eid
+(s/defn txid  :- tdsk/Eid
   "Returns the EID of a transaction"
-  [tx-result :- tsd/TxResult]
+  [tx-result :- tdsk/TxResult]
   (let [datoms  (grab :tx-data tx-result)
         txids   (mapv :tx datoms) ]
     (assert (apply = txids))  ; all datoms in tx have same txid
