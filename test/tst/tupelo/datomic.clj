@@ -47,10 +47,6 @@
   (throws? (td/check-symbol-usage '[?aaa* ?aaa* bbb ]))
   )
 
-
-
-
-
 (dotest
   (is (wild-match? {:db/id                 :*
                     :db.install/_partition :db.part/db

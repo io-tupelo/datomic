@@ -291,7 +291,6 @@
      - any other symbol appears only once
    Else returns `:ok` "
   [syms-vec :- tsk/Vec]
-  (nl)
   (let [syms-query-wild    (keep-if query-sym-wild? syms-vec)
         syms-reg           (drop-if query-sym-wild? syms-vec)
         freq-map-reg       (frequencies syms-reg)
