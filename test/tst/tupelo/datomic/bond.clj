@@ -126,8 +126,8 @@
                       :let [$ (live-db)]
                       :yield [?name]
                       :where
-                        {:person/name ?name :weapon/type :weapon/guile}
-                        {:person/name ?name :weapon/type :weapon/gun})]
+                        {:db/id ?any-id* :person/name ?name :weapon/type :weapon/guile}
+                        {:db/id ?any-id* :person/name ?name :weapon/type :weapon/gun})]
       (is= #{["Dr No"] ["M"]} tuple-set))
 
     ;-----------------------------------------------------------------------------
@@ -177,7 +177,7 @@
   (let [tuple-set (td/query
                     :let [$ (live-db)]
                     :yield [?name ?loc] ; <- shape of output tuples
-                    :where {:person/name ?name :location ?loc})]
+                    :where {:db/id ?any-id* :person/name ?name :location ?loc})]
     (s/validate  ts/TupleSet  tuple-set)       ; verify expected type using Prismatic Schema
     (s/validate #{ [s/Any] }  tuple-set)       ; literal definition of TupleSet
     (is= tuple-set #{ ["Dr No"       "Caribbean"]      ; Even though London is repeated, each tuple is
@@ -190,10 +190,10 @@
   (let [names  (onlies (td/query
                          :let [$ (live-db)]
                          :yield [?name] ; <- a single attr-val output
-                         :where {:person/name ?name}))
+                         :where {:db/id ?any-id* :person/name ?name}))
         cities (onlies (td/query :let [$ (live-db)]
                          :yield [?loc] ; <- a single attr-val output
-                         :where {:location ?loc}))
+                         :where {:db/id ?any-id* :location ?loc}))
         ]
     (is= names #{"Dr No" "James Bond" "M"}) ; all names are present, since unique
     (is= cities #{"Caribbean" "London"})) ; duplicate "London" discarded
@@ -220,7 +220,7 @@
                            :let [$ (live-db) ; assign multiple find variables
                                  ?loc "Caribbean"] ; just like clojure 'let' special form
                            :yield [?name]
-                           :where {:person/name ?name :location ?loc}))
+                           :where {:db/id ?any-id* :person/name ?name :location ?loc}))
         busy      (try ; error - multiple results for London
                     (only2 (td/query
                              :let [$ (live-db)
@@ -329,7 +329,7 @@
   (let [tuple-set (td/query
                     :let [$ (live-db)]
                     :yield [?name ?loc] ; <- shape of output tuples
-                    :where {:person/name ?name :location ?loc}) ]
+                    :where {:db/id ?any-id* :person/name ?name :location ?loc}) ]
     (is= tuple-set #{["James Bond" "London"]
                      ["M" "London"]
                      ["Dr No" "Caribbean"]
@@ -341,7 +341,7 @@
   (let [tuple-set (td/query
                     :let [$ (live-db)]
                     :yield [?name ?loc]
-                    :where {:person/name ?name :location ?loc}) ]
+                    :where {:db/id ?any-id* :person/name ?name :location ?loc}) ]
     (is= tuple-set #{["James Bond" "London"]
                      ["M" "London"]
                      ["Honey Rider" "Caribbean"]}))

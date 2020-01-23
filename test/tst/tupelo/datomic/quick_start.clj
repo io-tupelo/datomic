@@ -91,7 +91,7 @@
       (is= (onlies (td/query
                      :let [$ (d/db conn)]
                      :yield [?name] ; <- could also use Datomic Pull API
-                     :where {:movie/title ?name}))
+                     :where {:db/id ?any-id* :movie/title ?name}))
         #{"Repo Man" "Commando" "The Goonies"}))
 
     (is= true (d/delete-database datomic-uri)))) ; true on success

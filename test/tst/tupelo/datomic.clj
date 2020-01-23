@@ -29,6 +29,29 @@
 ;---------------------------------------------------------------------------------------------------
 
 (dotest
+  (is (td/query-sym? (quote ?name)))
+  (isnt (td/query-sym? (quote name)))
+  (isnt (td/query-sym? :name))
+  (isnt (td/query-sym? "name"))
+  (isnt (td/query-sym? 5))
+
+  (is (td/query-sym-wild? (quote ?name*)))
+  (isnt (td/query-sym-wild? (quote ?name)))
+  (isnt (td/query-sym-wild? :name*))
+  (isnt (td/query-sym-wild? "name*"))
+  (isnt (td/query-sym-wild? 5))
+
+  (is= :ok (td/check-symbol-usage '[aaa bbb bbb aaa]))
+  (throws? (td/check-symbol-usage '[aaa bbb aaa ]))
+  (is= :ok (td/check-symbol-usage '[?aaa* ?bbb ?bbb])) ; orphans must by query symbol AND wildcard to pass OK
+  (throws? (td/check-symbol-usage '[?aaa* ?aaa* bbb ]))
+  )
+
+
+
+
+
+(dotest
   (is (wild-match? {:db/id                 :*
                     :db.install/_partition :db.part/db
                     :db/ident              :people}
