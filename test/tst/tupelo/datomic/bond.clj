@@ -337,7 +337,7 @@
     (td/retract-entity [:person/name "Dr No"] ))
   ; ...and now he's gone!
   (let [tuple-set (td/query-map {:let   [$ (live-db)]
-                                 :yield [?name ?loc] ; <- shape of output tuples
+                                 :yield [?name ?loc] ; <- will becomre kw's in output maps
                                  :where [{:db/id ?any-id :person/name ?name :location ?loc}]})]
     (is= tuple-set #{{:name "James Bond"    :loc "London"   }
                      {:name "M"             :loc "London"   }
