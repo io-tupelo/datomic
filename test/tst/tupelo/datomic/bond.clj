@@ -7,7 +7,7 @@
     [tupelo.datomic :as td]
     [tupelo.schema :as ts]
     [tupelo.datomic.schema :as tdsk]
-    ))
+    [tupelo.schema :as tsk]))
 
 (def datomic-uri "datomic:mem://tst.bond") ; the URI for our test db
 (def ^:dynamic *conn*) ; dynamic var to hold the db connection
@@ -174,15 +174,14 @@
 
   ; For general queries, use td/find.  It returns a set of tuples (a TupleSet).  Duplicate
   ; tuples in the result will be discarded.
-  (let [tuple-set (td/query
-                    :let [$ (live-db)]
-                    :yield [?name ?loc] ; <- shape of output tuples
-                    :where {:db/id ?any-id* :person/name ?name :location ?loc})]
-    (s/validate  ts/TupleSet  tuple-set)       ; verify expected type using Prismatic Schema
-    (s/validate #{ [s/Any] }  tuple-set)       ; literal definition of TupleSet
-    (is= tuple-set #{ ["Dr No"       "Caribbean"]      ; Even though London is repeated, each tuple is
-                      ["James Bond"  "London"]         ; still unique. Otherwise, any duplicate tuples
-                      ["M"           "London"] } ))   ; will be discarded since output is a clojure set.
+  (let [result-set (td/query-map {
+                                  :let   [$ (live-db)]
+                                  :yield [?name ?loc] ; <- shape of output tuples
+                                  :where [{:db/id ?any-id :person/name ?name :location ?loc}]})]
+    (s/validate  #{tsk/KeyMap}  result-set)       ; verify expected type using Prismatic Schema
+    (is= result-set #{{:name "Dr No" :loc "Caribbean"}      ; Even though London is repeated, each tuple is
+                      {:name "James Bond" :loc "London"}    ; still unique. Otherwise, any duplicate tuples
+                      {:name "M" :loc "London"}}))          ; will be discarded since output is a clojure set.
 
   ; If you want just a single attribute as output, you can get a set of attributes (rather than a set of
   ; tuples) use (onlies ...).  As usual, any duplicate values will be discarded. It is an error if
@@ -326,25 +325,23 @@
 
   ; Once James has defeated Dr No, we need to remove him (& everything he possesses) from the database.
   ; We see that Dr No is in the DB...
-  (let [tuple-set (td/query
-                    :let [$ (live-db)]
-                    :yield [?name ?loc] ; <- shape of output tuples
-                    :where {:db/id ?any-id* :person/name ?name :location ?loc}) ]
-    (is= tuple-set #{["James Bond" "London"]
-                     ["M" "London"]
-                     ["Dr No" "Caribbean"]
-                     ["Honey Rider" "Caribbean"]}))
+  (let [tuple-set (td/query-map {:let   [$ (live-db)]
+                                 :yield [?name ?loc] ; <- shape of output tuples
+                                 :where [{:db/id ?any-id :person/name ?name :location ?loc}]})]
+    (is= tuple-set #{{:name "James Bond"    :loc "London"   }
+                     {:name "M"             :loc "London"   }
+                     {:name "Dr No"         :loc "Caribbean"}
+                     {:name "Honey Rider"   :loc "Caribbean"}}))
   ; we do the retraction...
   (td/transact *conn*
     (td/retract-entity [:person/name "Dr No"] ))
   ; ...and now he's gone!
-  (let [tuple-set (td/query
-                    :let [$ (live-db)]
-                    :yield [?name ?loc]
-                    :where {:db/id ?any-id* :person/name ?name :location ?loc}) ]
-    (is= tuple-set #{["James Bond" "London"]
-                     ["M" "London"]
-                     ["Honey Rider" "Caribbean"]}))
+  (let [tuple-set (td/query-map {:let   [$ (live-db)]
+                                 :yield [?name ?loc] ; <- shape of output tuples
+                                 :where [{:db/id ?any-id :person/name ?name :location ?loc}]})]
+    (is= tuple-set #{{:name "James Bond"    :loc "London"   }
+                     {:name "M"             :loc "London"   }
+                     {:name "Honey Rider"   :loc "Caribbean"}}))
 
   ;---------------------------------------------------------------------------------------------------
   ; Let's add some Bond girls into the DB
@@ -384,15 +381,16 @@
     ; Suppose Bibi Dahl is just not refined enough for James. Give her a demotion.
     (td/transact *conn*
       (td/retract-value [:person/name "James Bond"] :bond-girl [:person/name "Bibi Dahl"]))
-    (is (= (get-bond-girl-names) ; Note that Bibi Dahl is no longer listed
+    (is (= (get-bond-girl-names) ; Note that Bibi Dahl is no longer listed as a under `:bond-girl`
           ["Sylvia Trench" "Tatiana Romanova" "Pussy Galore"
            "Octopussy" "Paris Carver" "Christmas Jones" "Honey Rider"] ))
 
-    (let [bibi-eid (only (only (td/query
-                                 :let [$ (live-db)]
-                                 :yield [?eid]
-                                 :where {:db/id ?eid :person/name "Bibi Dahl"})))
-
+    ; Although Bibi is no longer a "Bond girl", she is still in the DB, and
+    ; we can see that her best friend is still Octopussy
+    (let [bibi-eid (only2 (td/query
+                            :let [$ (live-db)]
+                            :yield [?eid]
+                            :where {:db/id ?eid :person/name "Bibi Dahl"}))
           bibi     (td/entity-map (live-db) bibi-eid)
           bf-eid   (fetch-in bibi [:best-friend :db/id])
           bf       (td/entity-map (live-db) bf-eid)]
