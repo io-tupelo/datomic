@@ -320,15 +320,15 @@
 (s/defn ^:no-doc query-map-impl
   [ctx :- tsk/KeyMap]
   (let
-    [where-vec            (where-clause (grab :where ctx))               >> (spyx-pretty where-vec)
-     preds-vec            (get ctx :preds [])                               >> (spyx-pretty preds-vec)
-     preds2-vec           (mapv vector preds-vec)                           >> (spyx-pretty preds2-vec)
-     rules-vec            (get ctx :rules [])                               >> (spyx-pretty rules-vec)
-     let-vec              (grab :let ctx)                                   >> (spyx let-vec)
-     [let-syms let-srcs]  (partition-even-odd let-vec)                      >> (spyx [let-syms let-srcs] )
-     yield-vec            (grab :yield ctx)                                 >> (spyx yield-vec)
-     yield-kws            (mapv  query-sym->kw  yield-vec)                  >> (spyx yield-kws)
-     where-vec-final      (glue where-vec preds2-vec rules-vec)             >> (spyx where-vec-final)
+    [where-vec            (where-clause (grab :where ctx))                ; >> (spyx-pretty where-vec)
+     preds-vec            (get ctx :preds [])                             ; >> (spyx-pretty preds-vec)
+     preds2-vec           (mapv vector preds-vec)                         ; >> (spyx-pretty preds2-vec)
+     rules-vec            (get ctx :rules [])                             ; >> (spyx-pretty rules-vec)
+     let-vec              (grab :let ctx)                                 ; >> (spyx let-vec)
+     [let-syms let-srcs]  (partition-even-odd let-vec)                    ; >> (spyx [let-syms let-srcs] )
+     yield-vec            (grab :yield ctx)                               ; >> (spyx yield-vec)
+     yield-kws            (mapv  query-sym->kw  yield-vec)                ; >> (spyx yield-kws)
+     where-vec-final      (glue where-vec preds2-vec rules-vec)           ; >> (spyx where-vec-final)
      query-syms           (keep-if query-sym? (flatten [where-vec let-syms yield-vec rules-vec]))
      ]
     (check-symbol-usage query-syms)
