@@ -357,6 +357,9 @@
     (td/new-attribute :best-friend :db.type/ref))  ; one can have many friends
 
   ; #todo modify to use tempIds (string or negative int)
+  ; All the string values for `:db/id` are tempid's that are only valid during the transaction. They
+  ; are converted into normal EIDs once the data reaches Datomic.  Each new entity must have
+  ; a UNIQUE tempid value.
   (let [tx-result          @(td/transact *conn*
                               (td/new-entity {:db/id "user" :person/name "Sylvia Trench" :best-friend "tr"})
                               (td/new-entity {:db/id "tr" :person/name "Tatiana Romanova" :best-friend "user"})
