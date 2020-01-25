@@ -316,6 +316,54 @@
                            (glue eid-vec entry))]
         inner-result))))
 
+(s/defn ^:no-doc query-vec-impl
+  [ctx :- tsk/KeyMap]
+  (let
+    [where-vec            (where-clause (grab :where ctx))                ; >> (spyx-pretty where-vec)
+     preds-vec            (get ctx :preds [])                             ; >> (spyx-pretty preds-vec)
+     preds2-vec           (mapv vector preds-vec)                         ; >> (spyx-pretty preds2-vec)
+     rules-vec            (get ctx :rules [])                             ; >> (spyx-pretty rules-vec)
+     let-vec              (grab :let ctx)                                 ; >> (spyx let-vec)
+     [let-syms let-srcs]  (partition-even-odd let-vec)                    ; >> (spyx [let-syms let-srcs] )
+     yield-vec            (grab :yield ctx)                               ; >> (spyx yield-vec)
+     yield-kws            (mapv  query-sym->kw  yield-vec)                ; >> (spyx yield-kws)
+     where-vec-final      (glue where-vec preds2-vec rules-vec)           ; >> (spyx where-vec-final)
+     query-syms           (keep-if query-sym? (flatten [where-vec let-syms yield-vec rules-vec]))
+     ]
+    (check-symbol-usage query-syms)
+    ; Look for orphaned symbols
+    `(let [query-tuples# (d/q '{:find  ~yield-vec
+                                :in    [~@let-syms]
+                                :where ~where-vec-final }
+                           ~@let-srcs)
+           result-set#   (set (map vec query-tuples#) )]
+       result-set#)))
+
+(defmacro query-vec
+  "Returns search results as a set of maps (i.e. a TupleSet, or #{ [s/Any] } in Prismatic Schema),
+   where each tuple is unique. Usage:
+
+    (td/query-vec {
+       :let    [$        (d/db *conn*)     ; assign multiple variables just like
+                ?name    \"Caribbean\"]    ;   in Clojure 'let' special form
+       :preds  [ (< 1960 ?year) (< ?year 1970) ]
+       :yield  [?e ?name]
+       :where  {:db/id ?eid  :person/name ?name  :location ?loc}
+               {:db/id ?eid  :weapon/type :weapon/wit}  })
+
+  Unlike datomic.api/q, the query form does not need to be wrapped in a map literal nor is any
+  quoting required. Most importantly, the :in keyword has been replaced with the :let keyword, and
+  the syntax has been copied from the Clojure let special form so that both the query variables (the
+  variables $ and ?name in this case) are more closely aligned with their actual values. Also, the
+  implicit DB $ must be explicitly tied to its data source in all cases (as shown above).
+  The `:let` and `:yield` clauses may be in any order, but the `:where` clause must come last.
+
+  An exception is thrown if an orphan query symbol is found (eg `?nammmme`), where 'orphan' means 'used once'. Intentional
+  wildcards (free symbols) must end in a `*` character like '?dont-care*'
+   "
+  [ctx]
+  (query-vec-impl ctx))
+
 (s/defn ^:no-doc query-map-impl
   [ctx :- tsk/KeyMap]
   (let
