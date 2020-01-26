@@ -88,10 +88,9 @@
         (td/new-entity {:movie/title "Commando" :movie/genre "action/adventure" :movie/release-year 1985})
         (td/new-entity {:movie/title "Repo Man" :movie/genre "punk dystopia" :movie/release-year 1984}))
 
-      (is= (onlies (td/query
-                     :let [$ (d/db conn)]
-                     :yield [?name] ; <- could also use Datomic Pull API
-                     :where {:db/id ?any-id* :movie/title ?name}))
+      (is= (onlies (td/query-vec {:let   [$ (d/db conn)]
+                                  :yield [?name] ; <- could also use Datomic Pull API
+                                  :where [{:db/id ?any-id* :movie/title ?name}]}))
         #{"Repo Man" "Commando" "The Goonies"}))
 
     (is= true (d/delete-database datomic-uri)))) ; true on success

@@ -428,87 +428,12 @@
   [ctx]
   (query-map-impl ctx))
 
-
-
-;---------------------------------------------------------------------------------------------------
-; #todo need checks to stop collection result (:find [?e ...])
-; #todo and scalar result (:find [?e .])
-(defmacro ^:no-doc query-base    ; #todo remember 'with'
-  ; returns a HashSet of datomic entity objects
-  "Base macro for improved API syntax for datomic.api/q query function (Entity API)"
-  [& args]
-  ; (newline) (println "find-base =>" args)
-  (when-not (= :where (nth args 4))
-    (throw (IllegalArgumentException. 
-      (str "find-base: 5th arg must be :where, received=" args))))
-  (let
-    [let-find-map  (apply hash-map (take 4 args))                           ; >> (spyx let-find-map)
-     where-entries (where-clause (drop 5 args))                             ; >> (spyx where-entries)
-     args-map      (glue let-find-map {:where where-entries})               ; >> (spyx args-map)
-     let-vec       (grab :let args-map)                                     ; >> (spyx let-vec)
-     let-map       (apply hash-map let-vec)                                 ; >> (spyx let-map)
-     let-syms      (keys let-map)                                           ; >> (spyx let-syms)
-     let-srcs      (vals let-map)                                           ; >> (spyx let-srcs)
-     yield-vec    (grab :yield args-map)                                    ; >> (spyx yield-vec)
-     where-vec     (grab :where args-map)                                   ; >> (spyx where-vec)
-     ]
-    (flush)
-    (when-not (vector? let-vec)
-      (throw (IllegalArgumentException. (str "find-base: value for :let must be a vector; received=" let-vec))))
-    (when-not (vector? yield-vec)
-      (throw (IllegalArgumentException. (str "find-base: value for :yield must be a vector; received=" yield-vec))))
-    (when-not (vector? where-vec)
-      (throw (IllegalArgumentException. (str "find-base: value for :where must be a vector; received=" where-vec))))
-    `(d/q  '{:find   ~yield-vec
-             :where  ~where-vec
-             :in     [ ~@let-syms ] }
-           ~@let-srcs)))
-
-; #todo change :find -> :return  ?
-(defmacro query
-  "Returns search results as a set of tuples (i.e. a TupleSet, or #{ [s/Any] } in Prismatic Schema),
-   where each tuple is unique. Usage:
-
-    (td/query
-       :let    [$        (d/db *conn*)     ; assign multiple variables just like
-                ?name    \"Caribbean\"]    ;   in Clojure 'let' special form
-       :yield  [?e ?name]
-       :where  {:db/id ?eid  :person/name ?name  :location ?loc}
-               {:db/id ?eid  :weapon/type :weapon/wit} )
-
-  Unlike datomic.api/q, the query form does not need to be wrapped in a map literal nor is any
-  quoting required. Most importantly, the :in keyword has been replaced with the :let keyword, and
-  the syntax has been copied from the Clojure let special form so that both the query variables (the
-  variables $ and ?name in this case) are more closely aligned with their actual values. Also, the
-  implicit DB $ must be explicitly tied to its data source in all cases (as shown above).
-  The `:let` and `:yield` clauses may be in any order, but the `:where` clause must come last.
-  "
-  [& args]
-  `(set (for [tuple# (query-base ~@args) ]
-          (vec tuple#))))
-
 (defn- ^:no-doc contains-pull?  ; prevent codox ("lein doc") from processing
  "Returns true if a sequence of symbols includes 'pull'"
   [args-vec]
   (let [args-map    (apply hash-map args-vec)
         find-vec    (flatten [ (grab :yield args-map) ] ) ]
     (has-some? #(= 'pull %) find-vec)))
-
-(defmacro query-pull
- "Returns a TupleList [Tuple] of query results, where items may be duplicated. Intended only for
-  use with the Datomic Pull API. Usage:
-
-    (td/find-pull   :let    [$ (d/db *conn*) ]
-                    :yield [ (pull ?eid [:location]) ]
-                    :where  { :db/td ?eid :location ?loc } )
-
-  It is an error if the :yield clause does not contain a Datomic Pull API request.  "
-  [& args]
-  (when-not (contains-pull? args)
-    (throw (IllegalArgumentException. 
-             (str "query-pull: Only intended for queries using the Datomic Pull API"))))
-  `(forv [tuple# (query-base ~@args) ]
-      (vec tuple#)))
 
 ; #todo: convert to t-find
 ; #todo: write blog post/forum letter about this testing technique
@@ -723,3 +648,83 @@
 ;     { :person  (fn [eid] (every?  #{:person/name :person/address :person/phone}
 ;                                   #(keys (entity-map eid)) ))
 ;     }
+
+;---------------------------------------------------------------------------------------------------
+; old query syntax
+;---------------------------------------------------------------------------------------------------
+; #todo need checks to stop collection result (:find [?e ...])
+; #todo and scalar result (:find [?e .])
+(defmacro ^:no-doc query-base    ; #todo remember 'with'
+  ; returns a HashSet of datomic entity objects
+  "Base macro for improved API syntax for datomic.api/q query function (Entity API)"
+  [& args]
+  ; (newline) (println "find-base =>" args)
+  (when-not (= :where (nth args 4))
+    (throw (IllegalArgumentException.
+             (str "find-base: 5th arg must be :where, received=" args))))
+  (let
+    [let-find-map  (apply hash-map (take 4 args))                           ; >> (spyx let-find-map)
+     where-entries (where-clause (drop 5 args))                             ; >> (spyx where-entries)
+     args-map      (glue let-find-map {:where where-entries})               ; >> (spyx args-map)
+     let-vec       (grab :let args-map)                                     ; >> (spyx let-vec)
+     let-map       (apply hash-map let-vec)                                 ; >> (spyx let-map)
+     let-syms      (keys let-map)                                           ; >> (spyx let-syms)
+     let-srcs      (vals let-map)                                           ; >> (spyx let-srcs)
+     yield-vec    (grab :yield args-map)                                    ; >> (spyx yield-vec)
+     where-vec     (grab :where args-map)                                   ; >> (spyx where-vec)
+     ]
+    (flush)
+    (when-not (vector? let-vec)
+      (throw (IllegalArgumentException. (str "find-base: value for :let must be a vector; received=" let-vec))))
+    (when-not (vector? yield-vec)
+      (throw (IllegalArgumentException. (str "find-base: value for :yield must be a vector; received=" yield-vec))))
+    (when-not (vector? where-vec)
+      (throw (IllegalArgumentException. (str "find-base: value for :where must be a vector; received=" where-vec))))
+    `(d/q  '{:find   ~yield-vec
+             :where  ~where-vec
+             :in     [ ~@let-syms ] }
+       ~@let-srcs)))
+
+
+(comment
+  ; #todo change :find -> :return  ?
+  (defmacro query
+    "Returns search results as a set of tuples (i.e. a TupleSet, or #{ [s/Any] } in Prismatic Schema),
+     where each tuple is unique. Usage:
+
+      (td/query
+         :let    [$        (d/db *conn*)     ; assign multiple variables just like
+                  ?name    \"Caribbean\"]    ;   in Clojure 'let' special form
+         :yield  [?e ?name]
+         :where  {:db/id ?eid  :person/name ?name  :location ?loc}
+                 {:db/id ?eid  :weapon/type :weapon/wit} )
+
+    Unlike datomic.api/q, the query form does not need to be wrapped in a map literal nor is any
+    quoting required. Most importantly, the :in keyword has been replaced with the :let keyword, and
+    the syntax has been copied from the Clojure let special form so that both the query variables (the
+    variables $ and ?name in this case) are more closely aligned with their actual values. Also, the
+    implicit DB $ must be explicitly tied to its data source in all cases (as shown above).
+    The `:let` and `:yield` clauses may be in any order, but the `:where` clause must come last.
+    "
+    [& args]
+    `(set (for [tuple# (query-base ~@args) ]
+            (vec tuple#))))
+
+  )
+
+(defmacro query-pull
+  "Returns a TupleList [Tuple] of query results, where items may be duplicated. Intended only for
+   use with the Datomic Pull API. Usage:
+
+     (td/find-pull   :let    [$ (d/db *conn*) ]
+                     :yield [ (pull ?eid [:location]) ]
+                     :where  { :db/td ?eid :location ?loc } )
+
+   It is an error if the :yield clause does not contain a Datomic Pull API request.  "
+  [& args]
+  (when-not (contains-pull? args)
+    (throw (IllegalArgumentException.
+             (str "query-pull: Only intended for queries using the Datomic Pull API"))))
+  `(forv [tuple# (query-base ~@args) ]
+     (vec tuple#)))
+
