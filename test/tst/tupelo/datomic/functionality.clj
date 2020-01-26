@@ -34,7 +34,7 @@
 (s/defn get-people :- ts/Set
   "Returns a set of entity maps for all entities with the :person/name attribute"
   [db-val :- s/Any]
-  (let [eids (onlies (td/query-vec {:let   [$ db-val]
+  (let [eids (onlies (td/query {:let       [$ db-val]
                                     :yield [?eid] ; <- could also use Datomic Pull API
                                     :where [{:db/id ?eid :person/name ?name*}]}))]
     (set  (for [eid eids]
